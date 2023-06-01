@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 import mandybrot_gpu as mandy
 
@@ -13,24 +14,26 @@ parser.add_argument("width", type=int)
 parser.add_argument("height", type=int)
 parser.add_argument("scale", type=float)
 parser.add_argument("max_iters", type=int)
+parser.add_argument("cmap", nargs="+", type=str)
 args = parser.parse_args()
 
 if not os.path.exists(OUTPUT_DIR):
 	os.makedirs(OUTPUT_DIR)
 
+t0 = time.time()
+
+# Build the colour map
+cmap = mandy.colour.build_colour_map(args.cmap, 256)
+
 data = mandy.sample.area(
 	args.real, args.imag, args.width, args.height, args.scale, args.max_iters
 )
 
-def display(data):
-	"""
-	"""
-	shape = data.shape
-	buffer = ""
-	for im in reversed(range(shape[0])):
-		for re in range(shape[1]):
-			buffer += f"{data[im,re]:4.0f}   "
-		buffer += "\n"
-	print(buffer)
+# Convert to an image
+img = mandy.colour.image(data, args.max_iters, cmap)
+mandy.colour.encode(img).save(os.path.join(OUTPUT_DIR, "mandybrot.png"))
 
-display(data)
+t1 = time.time()
+
+
+print(f"Calculation time: {t1-t0} seconds.")
